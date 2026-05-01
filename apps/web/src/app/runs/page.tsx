@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import type { RunSummary, Strategy } from "@/lib/types";
+import { buttonVariants } from "@test-evals/ui/components/button";
+import { cn } from "@test-evals/ui/lib/utils";
 
 export default function RunsPage() {
   const [runs, setRuns] = useState<RunSummary[]>([]);
@@ -47,7 +49,13 @@ export default function RunsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Evaluation Dashboard</h1>
           <p className="text-zinc-500">Structured clinical extraction benchmarking</p>
         </div>
-        <Link href="/compare" className="bg-zinc-100 hover:bg-zinc-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <Link
+          href="/compare"
+          className={cn(
+            buttonVariants({ variant: "secondary" }),
+            "rounded-lg transition-colors px-4 py-2 text-sm font-medium"
+          )}
+        >
           Compare Strategies →
         </Link>
       </div>
