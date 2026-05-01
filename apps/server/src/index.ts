@@ -19,17 +19,22 @@ app.use(async (c, next) => {
 app.use("*", async (c, next) => {
   const origin = c.req.header("origin");
   const isVercel = origin?.endsWith(".vercel.app");
-  const allowedOrigin = isVercel ? origin : "https://healosbench-eval-harness.vercel.app";
+  const allowedOrigin = isVercel ? origin! : "https://healosbench-eval-harness.vercel.app";
 
-  c.header("Access-Control-Allow-Origin", allowedOrigin);
-  c.header("Access-Control-Allow-Credentials", "true");
-  c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  c.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent");
+  console.log(`[DEBUG] Request Method: ${c.req.method}, Origin: ${origin}, Allowed: ${allowedOrigin}`);
 
   if (c.req.method === "OPTIONS") {
+    c.header("Access-Control-Allow-Origin", allowedOrigin);
+    c.header("Access-Control-Allow-Credentials", "true");
+    c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    c.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent");
     return c.text("", 204);
   }
+
   await next();
+  
+  c.header("Access-Control-Allow-Origin", allowedOrigin);
+  c.header("Access-Control-Allow-Credentials", "true");
 });
 
 app.use(logger());
