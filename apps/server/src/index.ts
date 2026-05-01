@@ -1,11 +1,20 @@
 import { auth } from "@test-evals/auth";
 import { env } from "@test-evals/env/server";
+import { runMigrations } from "@test-evals/db";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { createRunsRouter } from "./routes/runs";
 import { compareRouter } from "./routes/compare";
 import { transcriptsRouter } from "./routes/transcripts";
+
+// Run database migrations before accepting any requests
+try {
+  runMigrations();
+} catch (err) {
+  console.error("[db] migration failed:", err);
+  process.exit(1);
+}
 
 const app = new Hono();
 
