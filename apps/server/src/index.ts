@@ -59,15 +59,13 @@ app.route("/api/v1/runs", createRunsRouter(() => process.env.ANTHROPIC_API_KEY ?
 app.route("/api/v1/compare", compareRouter);
 app.route("/api/v1/transcripts", transcriptsRouter);
 
-app.notFound((c) => {
-  console.error(`[404 ALERT] Route not found: ${c.req.method} ${c.req.path}`);
-  console.error(`[404 HEADERS] ${JSON.stringify(Object.fromEntries(c.req.raw.headers.entries()))}`);
-  return c.json({ error: "Not Found", path: c.req.path }, 404);
-});
-
 app.onError((err, c) => {
-  console.error(`[ERROR ALERT] ${err.message}`);
-  return c.json({ error: "Internal Server Error" }, 500);
+  console.error(`[ERROR ALERT]`, err);
+  return c.json({ 
+    error: "Internal Server Error", 
+    message: err.message,
+    stack: err.stack 
+  }, 500);
 });
 
 export default {
