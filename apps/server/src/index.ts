@@ -14,13 +14,12 @@ app.use(
   "/*",
   cors({
     origin: (origin) => {
-      // Allow exact match or match without trailing slash
       if (!origin) return null;
-      const cleanOrigin = env.CORS_ORIGIN.replace(/\/$/, "");
-      if (origin === cleanOrigin || origin === env.CORS_ORIGIN) {
+      // Allow any Vercel deployment for this project
+      if (origin.endsWith(".vercel.app") || origin === env.CORS_ORIGIN.replace(/\/$/, "")) {
         return origin;
       }
-      return null;
+      return env.CORS_ORIGIN;
     },
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key"],
