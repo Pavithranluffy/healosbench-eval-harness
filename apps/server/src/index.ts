@@ -14,17 +14,13 @@ app.use(
   "/*",
   cors({
     origin: (origin) => {
-      if (!origin) return null;
-      // Allow any Vercel deployment for this project
-      if (origin.endsWith(".vercel.app") || origin === env.CORS_ORIGIN.replace(/\/$/, "")) {
-        return origin;
-      }
-      return env.CORS_ORIGIN;
+      // For the demo: Allow all origins to avoid any blockers
+      return origin || env.CORS_ORIGIN;
     },
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["*"], // Allow all headers
     credentials: true,
-    exposeHeaders: ["set-cookie"],
+    exposeHeaders: ["Set-Cookie"],
   }),
 );
 
