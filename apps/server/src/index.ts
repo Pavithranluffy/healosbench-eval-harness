@@ -13,10 +13,19 @@ app.use(logger());
 app.use(
   "/*",
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: (origin) => {
+      // Allow exact match or match without trailing slash
+      if (!origin) return null;
+      const cleanOrigin = env.CORS_ORIGIN.replace(/\/$/, "");
+      if (origin === cleanOrigin || origin === env.CORS_ORIGIN) {
+        return origin;
+      }
+      return null;
+    },
     allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key"],
     credentials: true,
+    exposeHeaders: ["set-cookie"],
   }),
 );
 
