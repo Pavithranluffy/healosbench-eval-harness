@@ -85,5 +85,37 @@ app.route("/api/v1/transcripts", transcriptsRouter);
 
 export default {
   port: Number(process.env.PORT) || 8787,
-  fetch: app.fetch,
+  fetch: async (request: Request) => {
+    const origin = request.headers.get("origin") || "*";
+
+    // 1. Handle Preflight OPTIONS immediately at the entry point
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": origin,
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent, x-requested-with",
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Max-Age": "86400",
+        },
+      });
+    }
+
+    // 2. Process the actual request
+    const response = await app.fetch(request);
+
+    // 3. Clone the response to inject headers (Responses are immutable)
+    const newHeaders = new Headers(response.headers);
+    newHeaders.set("Access-Control-Allow-Origin", origin);
+    newHeaders.set("Access-Control-Allow-Credentials", "true");
+    newHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    newHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent, x-requested-with");
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: newHeaders,
+    });
+  },
 };
