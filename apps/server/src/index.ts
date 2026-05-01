@@ -13,7 +13,7 @@ app.use(logger());
 app.use(
   "*",
   cors({
-    origin: env.CORS_ORIGIN.replace(/\/$/, ""),
+    origin: (process.env.CORS_ORIGIN || "http://localhost:3000").replace(/\/$/, ""),
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key", "better-auth-agent"],
     credentials: true,
