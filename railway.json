@@ -6,6 +6,9 @@
   "deploy": {
     "startCommand": "bun run apps/server/src/index.ts",
     "restartPolicyType": "ON_FAILURE",
-    "healthcheckPath": "/health"
+    "healthcheckPath": "/health",
+    "env": {
+      "NIXPACKS_NODE_VERSION": "20"
+    }
   }
 }
