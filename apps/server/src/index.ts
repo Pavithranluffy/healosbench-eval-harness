@@ -15,25 +15,22 @@ app.use(async (c, next) => {
   await next();
 });
 
-// 1. GLOBAL CORS - Must be first
-app.use(
-  "*",
-  cors({
-    origin: (origin) => {
-      console.log(`[DEBUG] CORS Check for Origin: ${origin}`);
-      if (!origin) return env.CORS_ORIGIN;
-      // Allow any Vercel subdomain or localhost
-      if (origin.endsWith(".vercel.app") || origin.includes("localhost")) {
-        return origin;
-      }
-      return env.CORS_ORIGIN;
-    },
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key", "better-auth-agent"],
-    credentials: true,
-    exposeHeaders: ["Set-Cookie"],
-  }),
-);
+// 1. MANUAL HARDCODED CORS - No more library issues
+app.use("*", async (c, next) => {
+  const origin = c.req.header("origin");
+  const isVercel = origin?.endsWith(".vercel.app");
+  const allowedOrigin = isVercel ? origin : "https://healosbench-eval-harness.vercel.app";
+
+  c.header("Access-Control-Allow-Origin", allowedOrigin);
+  c.header("Access-Control-Allow-Credentials", "true");
+  c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  c.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent");
+
+  if (c.req.method === "OPTIONS") {
+    return c.text("", 204);
+  }
+  await next();
+});
 
 app.use(logger());
 
