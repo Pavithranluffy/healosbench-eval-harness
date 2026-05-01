@@ -36,14 +36,15 @@ app.use("*", async (c, next) => {
   console.log(`[DEBUG] Outgoing: ${c.res.status} (Origin: ${c.req.header("Origin")})`);
 });
 
-// 4. AUTH HANDLER (Manual CORS wrap to be safe)
+// 4. AUTH HANDLER
 app.all("/api/auth/*", async (c) => {
+  console.log(`[AUTH] Request: ${c.req.method} ${c.req.path}`);
   const res = await auth.handler(c.req.raw);
-  // Clone the response to ensure we can set headers if the handler missed them
-  const newRes = new Response(res.body, res);
   const origin = c.req.header("Origin") || "*";
+  const newRes = new Response(res.body, res);
   newRes.headers.set("Access-Control-Allow-Origin", origin);
   newRes.headers.set("Access-Control-Allow-Credentials", "true");
+  console.log(`[AUTH] Response: ${res.status}`);
   return newRes;
 });
 
@@ -59,8 +60,14 @@ app.route("/api/v1/compare", compareRouter);
 app.route("/api/v1/transcripts", transcriptsRouter);
 
 app.notFound((c) => {
-  console.log(`[404] ${c.req.path}`);
+  console.error(`[404 ALERT] Route not found: ${c.req.method} ${c.req.path}`);
+  console.error(`[404 HEADERS] ${JSON.stringify(Object.fromEntries(c.req.raw.headers.entries()))}`);
   return c.json({ error: "Not Found", path: c.req.path }, 404);
+});
+
+app.onError((err, c) => {
+  console.error(`[ERROR ALERT] ${err.message}`);
+  return c.json({ error: "Internal Server Error" }, 500);
 });
 
 export default {
