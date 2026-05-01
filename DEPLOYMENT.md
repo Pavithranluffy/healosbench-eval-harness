@@ -52,7 +52,7 @@ git push -u origin main
    - **Build Command:** `bun run build`
    - **Install Command:** `bun install`
 5. **Set Environment Variables:**
-   - `NEXT_PUBLIC_API_URL`: (The URL of your Railway backend, e.g., `https://server-production-xxx.up.railway.app`)
+   - `NEXT_PUBLIC_SERVER_URL`: (The URL of your Railway backend, e.g., `https://server-production-xxx.up.railway.app`)
    - `BETTER_AUTH_URL`: (Your Vercel app URL)
    - `NODE_ENV`: `production`
 
