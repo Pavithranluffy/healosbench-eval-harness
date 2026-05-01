@@ -13,7 +13,7 @@ app.use(logger());
 app.use(
   "*",
   cors({
-    origin: (origin) => origin || "*",
+    origin: env.CORS_ORIGIN.replace(/\/$/, ""),
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key", "better-auth-agent"],
     credentials: true,
@@ -21,9 +21,8 @@ app.use(
   }),
 );
 
-// Force success on all OPTIONS preflights
-app.options("*", (c) => c.text("", 204));
-
+// Manual preflight handler for auth routes
+app.options("/api/auth/*", (c) => c.text("", 204));
 app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
 
 app.get("/", (c) => c.text("OK"));
