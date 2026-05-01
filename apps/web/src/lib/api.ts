@@ -1,9 +1,5 @@
-/**
- * Thin client to the Hono server. The browser only ever talks to /api/v1/*
- * here — the API key is server-side.
- */
-
-const BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8787";
+import { env } from "@test-evals/env/web";
+const BASE = env.NEXT_PUBLIC_SERVER_URL;
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
