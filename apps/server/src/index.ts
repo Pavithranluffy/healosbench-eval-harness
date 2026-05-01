@@ -86,14 +86,26 @@ app.route("/api/v1/transcripts", transcriptsRouter);
 export default {
   port: Number(process.env.PORT) || 8787,
   fetch: async (request: Request) => {
-    const origin = request.headers.get("origin") || "*";
+    const origin = request.headers.get("origin");
+    const referer = request.headers.get("referer");
+    
+    // Determine the best origin to allow
+    let allowedOrigin = "https://healosbench-eval-harness.vercel.app";
+    if (origin && (origin.endsWith(".vercel.app") || origin.includes("localhost"))) {
+      allowedOrigin = origin;
+    } else if (referer && referer.includes("vercel.app")) {
+      const url = new URL(referer);
+      allowedOrigin = `${url.protocol}//${url.host}`;
+    }
 
-    // 1. Handle Preflight OPTIONS immediately at the entry point
+    console.log(`[CORS DEBUG] Method: ${request.method}, URL: ${request.url}, Origin: ${origin}, Allowed: ${allowedOrigin}`);
+
+    // 1. Handle Preflight OPTIONS immediately
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
         headers: {
-          "Access-Control-Allow-Origin": origin,
+          "Access-Control-Allow-Origin": allowedOrigin,
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent, x-requested-with",
           "Access-Control-Allow-Credentials": "true",
@@ -105,9 +117,9 @@ export default {
     // 2. Process the actual request
     const response = await app.fetch(request);
 
-    // 3. Clone the response to inject headers (Responses are immutable)
+    // 3. Clone and inject headers
     const newHeaders = new Headers(response.headers);
-    newHeaders.set("Access-Control-Allow-Origin", origin);
+    newHeaders.set("Access-Control-Allow-Origin", allowedOrigin);
     newHeaders.set("Access-Control-Allow-Credentials", "true");
     newHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     newHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent, x-requested-with");
