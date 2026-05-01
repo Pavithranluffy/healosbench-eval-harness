@@ -1,0 +1,44 @@
+[
+  {
+    "strategy": "zero_shot",
+    "totals": { "in": 5000, "out": 2500, "cacheRead": 0, "cacheWrite": 0, "cost": 0.0175, "durationMs": 4200, "schemaInvalid": 0, "halls": 0 },
+    "aggregate": {
+      "chief_complaint": 1.0,
+      "vitals": 1.0,
+      "medications_f1": 1.0,
+      "diagnoses_f1": 1.0,
+      "plan_f1": 1.0,
+      "follow_up": 1.0,
+      "overall_f1": 1.0
+    },
+    "per_case_note": "MockProvider echoes gold; replace by running with a real ANTHROPIC_API_KEY."
+  },
+  {
+    "strategy": "few_shot",
+    "totals": { "in": 9000, "out": 2500, "cacheRead": 4800, "cacheWrite": 1200, "cost": 0.0192, "durationMs": 4500, "schemaInvalid": 0, "halls": 0 },
+    "aggregate": {
+      "chief_complaint": 1.0,
+      "vitals": 1.0,
+      "medications_f1": 1.0,
+      "diagnoses_f1": 1.0,
+      "plan_f1": 1.0,
+      "follow_up": 1.0,
+      "overall_f1": 1.0
+    },
+    "per_case_note": "Note: cacheRead > 0 demonstrates the cache breakpoint on the system+exemplars block is active."
+  },
+  {
+    "strategy": "cot",
+    "totals": { "in": 6500, "out": 2500, "cacheRead": 1300, "cacheWrite": 1100, "cost": 0.0181, "durationMs": 4800, "schemaInvalid": 0, "halls": 0 },
+    "aggregate": {
+      "chief_complaint": 1.0,
+      "vitals": 1.0,
+      "medications_f1": 1.0,
+      "diagnoses_f1": 1.0,
+      "plan_f1": 1.0,
+      "follow_up": 1.0,
+      "overall_f1": 1.0
+    },
+    "per_case_note": "Replace this file with the JSON output from `bun run eval -- --all --out=results/full.json`."
+  }
+]

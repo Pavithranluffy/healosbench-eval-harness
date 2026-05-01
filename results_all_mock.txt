@@ -1,0 +1,50 @@
+$ bun run --cwd apps/server eval --all "--limit=5"
+$ bun run src/cli/eval.ts --all "--limit=5"
+⚠  ANTHROPIC_API_KEY not set — using MockProvider (echoes gold). Set the key for real evals.
+
+=== zero_shot (hash 381e30f6971bd848) — 5 cases @ claude-haiku-4-5-20251001 ===
+  [1/5] case_001  f1=1.000  halls=4
+  [2/5] case_002  f1=1.000  halls=3
+  [3/5] case_003  f1=1.000  halls=5
+  [4/5] case_004  f1=1.000  halls=3
+  [5/5] case_005  f1=1.000  halls=5
+
+=== few_shot (hash 292fd4f3f29bb52b) — 5 cases @ claude-haiku-4-5-20251001 ===
+  [1/5] case_001  f1=1.000  halls=4
+  [2/5] case_002  f1=1.000  halls=3
+  [3/5] case_003  f1=1.000  halls=5
+  [4/5] case_004  f1=1.000  halls=3
+  [5/5] case_005  f1=1.000  halls=5
+
+=== cot (hash b220a2198b34a231) — 5 cases @ claude-haiku-4-5-20251001 ===
+  [1/5] case_001  f1=1.000  halls=4
+  [2/5] case_002  f1=1.000  halls=3
+  [3/5] case_003  f1=1.000  halls=5
+  [4/5] case_004  f1=1.000  halls=3
+  [5/5] case_005  f1=1.000  halls=5
+
+┌───────────┬──────┬──────┬──────┬──────┬──────┬──────┬────────┬───────┬──────┬──────┬─────────┐
+│ strategy  │ CC   │ vitals│ meds │ dx   │ plan │ FU   │ overall│ halls │ inv  │ cost │ duration│
+├───────────┼──────┼──────┼──────┼──────┼──────┼──────┼────────┼───────┼──────┼──────┼─────────┤
+│ zero_shot │ 1.00 │ 1.00 │ 1.00 │ 1.00 │ 1.00 │ 1.00 │  1.000 │    20 │    0 │ $0.002 │    0.1s │
+│ few_shot  │ 1.00 │ 1.00 │ 1.00 │ 1.00 │ 1.00 │ 1.00 │  1.000 │    20 │    0 │ $0.002 │    0.0s │
+│ cot       │ 1.00 │ 1.00 │ 1.00 │ 1.00 │ 1.00 │ 1.00 │  1.000 │    20 │    0 │ $0.002 │    0.1s │
+└───────────┴──────┴──────┴──────┴──────┴──────┴──────┴────────┴───────┴──────┴──────┴─────────┘
+
+Compare deltas (relative to first strategy):
+  few_shot vs zero_shot:
+    · chief_complaint    0.000
+    · vitals             0.000
+    · medications_f1     0.000
+    · diagnoses_f1       0.000
+    · plan_f1            0.000
+    · follow_up          0.000
+    · overall_f1         0.000
+  cot vs zero_shot:
+    · chief_complaint    0.000
+    · vitals             0.000
+    · medications_f1     0.000
+    · diagnoses_f1       0.000
+    · plan_f1            0.000
+    · follow_up          0.000
+    · overall_f1         0.000

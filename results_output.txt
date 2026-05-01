@@ -1,0 +1,11 @@
+$ bun run --cwd apps/server eval "--strategy=zero_shot" "--limit=1"
+$ bun run src/cli/eval.ts "--strategy=zero_shot" "--limit=1"
+
+=== zero_shot (hash 381e30f6971bd848) — 1 cases @ claude-haiku-4-5-20251001 ===
+  [1/1] case_001 ERROR Error: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CabrUrYPnawNpAZ3c9cSb"}
+
+┌───────────┬──────┬──────┬──────┬──────┬──────┬──────┬────────┬───────┬──────┬──────┬─────────┐
+│ strategy  │ CC   │ vitals│ meds │ dx   │ plan │ FU   │ overall│ halls │ inv  │ cost │ duration│
+├───────────┼──────┼──────┼──────┼──────┼──────┼──────┼────────┼───────┼──────┼──────┼─────────┤
+│ zero_shot │ 0.00 │ 0.00 │ 0.00 │ 0.00 │ 0.00 │ 0.00 │  0.000 │     0 │    0 │ $0.000 │    0.5s │
+└───────────┴──────┴──────┴──────┴──────┴──────┴──────┴────────┴───────┴──────┴──────┴─────────┘

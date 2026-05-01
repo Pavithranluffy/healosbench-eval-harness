@@ -1,0 +1,16 @@
+$ bun run --cwd apps/server eval "--strategy=zero_shot" "--limit=5"
+$ bun run src/cli/eval.ts "--strategy=zero_shot" "--limit=5"
+⚠  ANTHROPIC_API_KEY not set — using MockProvider (echoes gold). Set the key for real evals.
+
+=== zero_shot (hash 381e30f6971bd848) — 5 cases @ claude-haiku-4-5-20251001 ===
+  [1/5] case_001  f1=1.000  halls=4
+  [2/5] case_002  f1=1.000  halls=3
+  [3/5] case_003  f1=1.000  halls=5
+  [4/5] case_004  f1=1.000  halls=3
+  [5/5] case_005  f1=1.000  halls=5
+
+┌───────────┬──────┬──────┬──────┬──────┬──────┬──────┬────────┬───────┬──────┬──────┬─────────┐
+│ strategy  │ CC   │ vitals│ meds │ dx   │ plan │ FU   │ overall│ halls │ inv  │ cost │ duration│
+├───────────┼──────┼──────┼──────┼──────┼──────┼──────┼────────┼───────┼──────┼──────┼─────────┤
+│ zero_shot │ 1.00 │ 1.00 │ 1.00 │ 1.00 │ 1.00 │ 1.00 │  1.000 │    20 │    0 │ $0.002 │    0.1s │
+└───────────┴──────┴──────┴──────┴──────┴──────┴──────┴────────┴───────┴──────┴──────┴─────────┘

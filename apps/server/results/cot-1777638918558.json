@@ -1,0 +1,848 @@
+{
+  "strategy": "cot",
+  "totals": {
+    "in": 500,
+    "out": 250,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "cost": 0.00175,
+    "durationMs": 50,
+    "schemaInvalid": 0,
+    "halls": 20
+  },
+  "aggregate": {
+    "chief_complaint": 1,
+    "vitals": 1,
+    "medications_f1": 1,
+    "diagnoses_f1": 1,
+    "plan_f1": 1,
+    "follow_up": 1,
+    "overall_f1": 1
+  },
+  "per_case": [
+    {
+      "case_id": "case_001",
+      "transcript_id": "case_001",
+      "status": "completed",
+      "prediction": {
+        "chief_complaint": "sore throat and nasal congestion for four days",
+        "vitals": {
+          "bp": "122/78",
+          "hr": 88,
+          "temp_f": 100.4,
+          "spo2": 98
+        },
+        "medications": [
+          {
+            "name": "ibuprofen",
+            "dose": "400 mg",
+            "frequency": "every 6 hours as needed",
+            "route": "PO"
+          }
+        ],
+        "diagnoses": [
+          {
+            "description": "viral upper respiratory infection",
+            "icd10": "J06.9"
+          }
+        ],
+        "plan": [
+          "supportive care with fluids and saline nasal spray",
+          "ibuprofen 400 mg every 6 hours as needed for pain and fever",
+          "call if not improving in 7 days or fever above 102"
+        ],
+        "follow_up": {
+          "interval_days": null,
+          "reason": "return only if symptoms worsen"
+        }
+      },
+      "scores": {
+        "chief_complaint": 1,
+        "vitals": 1,
+        "medications": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "diagnoses": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "icd10_bonus": 1
+        },
+        "plan": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "follow_up": 1
+      },
+      "aggregate_f1": 1,
+      "schema_invalid": false,
+      "hallucinations": [
+        {
+          "field_path": "chief_complaint",
+          "value": "sore throat and nasal congestion for four days",
+          "reason": "no textual support found in transcript"
+        },
+        {
+          "field_path": "plan[0]",
+          "value": "supportive care with fluids and saline nasal spray",
+          "reason": "plan item not supported by transcript"
+        },
+        {
+          "field_path": "plan[2]",
+          "value": "call if not improving in 7 days or fever above 102",
+          "reason": "plan item not supported by transcript"
+        },
+        {
+          "field_path": "follow_up.reason",
+          "value": "return only if symptoms worsen",
+          "reason": "follow-up reason not in transcript"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "request": {
+            "system": [
+              {
+                "text": "You are a clinical-information extraction tool. The user will provide a single doctor-patient encounter transcript. Your job is to extract the structured fields and call the `record_extraction` tool exactly once.\n\nRules:\n- Return values strictly in the schema. Do NOT invent fields.\n- For vitals not mentioned in the transcript, use null. Do NOT guess.\n- Medication routes use abbreviations (PO, IV, IM, topical, inhaled, SL, PR). Default to \"PO\" only if the transcript clearly implies oral administration; otherwise null.\n- chief_complaint must be a brief clinical summary in the patient's perspective, not a sentence.\n- ICD-10 codes are optional; include them only when you are confident.\n- Plan items are concise free-text statements, one per discrete action.\n- follow_up.interval_days is integer days; \"no follow-up\" → null.\n- Do NOT add any commentary; only the tool call.\n\nREASONING PROCESS (private — do not output text, but use these steps internally before calling the tool):\n1. Identify the chief complaint from the patient's first substantive statement.\n2. Scan for any vitals block ([Vitals: ...] or \"BP\", \"HR\", \"Temp\", \"SpO2\"); leave null when missing.\n3. Walk the transcript top to bottom; whenever a medication is named, capture {name, dose, frequency, route}. Default frequency = null when not stated.\n4. Resolve diagnoses from the doctor's assessment statements (\"this looks like…\", \"I'm diagnosing…\"). Add ICD-10 only for canonical, well-known codes (J06.9, E11.9, R51.9, K21.9).\n5. Plan = the doctor's instructions, one per discrete action.\n6. follow_up.interval_days: parse phrases like \"two weeks\" → 14, \"three months\" → 90, \"no follow-up needed\" → null.\n7. Cross-check: every value you put in the JSON should be traceable to a span in the transcript. If you can't trace it, prefer null.",
+                "cache_control": {
+                  "type": "ephemeral"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "role": "user",
+                "content": "TRANSCRIPT:\n```\n[Visit type: in-person sick visit]\n[Vitals taken at intake: BP 122/78, HR 88, Temp 100.4, SpO2 98%]\n\nDoctor: Hi Jenna, what brings you in today?\nPatient: I've had a sore throat for about four days, and now my nose is completely stuffed up. I feel awful.\nDoctor: Any cough?\nPatient: A little dry one at night.\nDoctor: Fever?\nPatient: I felt warm yesterday. The thermometer here said 100.4.\nDoctor: Let me take a look. Throat is red but no exudate, ears are clear, lungs sound fine. Rapid strep is negative. This looks like a viral upper respiratory infection.\nPatient: Can I get an antibiotic just in case?\nDoctor: Antibiotics won't help a virus, and they'd just give you side effects. Let's do supportive care. Take ibuprofen 400 mg every 6 hours as needed for the throat pain and fever, plenty of fluids, and saline nasal spray. If you're not improving in 7 days, or you spike a fever above 102, give us a call.\nPatient: Okay, that makes sense.\nDoctor: No need for a follow-up unless symptoms worsen.\n\n```\n\nThink through the 7 reasoning steps internally, then call record_extraction with the result."
+              }
+            ],
+            "tool": "record_extraction"
+          },
+          "response": {
+            "tool_input": {
+              "chief_complaint": "sore throat and nasal congestion for four days",
+              "vitals": {
+                "bp": "122/78",
+                "hr": 88,
+                "temp_f": 100.4,
+                "spo2": 98
+              },
+              "medications": [
+                {
+                  "name": "ibuprofen",
+                  "dose": "400 mg",
+                  "frequency": "every 6 hours as needed",
+                  "route": "PO"
+                }
+              ],
+              "diagnoses": [
+                {
+                  "description": "viral upper respiratory infection",
+                  "icd10": "J06.9"
+                }
+              ],
+              "plan": [
+                "supportive care with fluids and saline nasal spray",
+                "ibuprofen 400 mg every 6 hours as needed for pain and fever",
+                "call if not improving in 7 days or fever above 102"
+              ],
+              "follow_up": {
+                "interval_days": null,
+                "reason": "return only if symptoms worsen"
+              }
+            },
+            "text": "",
+            "stop_reason": "tool_use"
+          },
+          "tokens_in": 100,
+          "tokens_out": 50,
+          "cache_read": 0,
+          "cache_write": 0,
+          "schema_valid": true,
+          "validation_errors": [],
+          "duration_ms": 0
+        }
+      ],
+      "tokens_in": 100,
+      "tokens_out": 50,
+      "cache_read": 0,
+      "cache_write": 0,
+      "cost_usd": 0.00035,
+      "duration_ms": 0,
+      "error": null
+    },
+    {
+      "case_id": "case_002",
+      "transcript_id": "case_002",
+      "status": "completed",
+      "prediction": {
+        "chief_complaint": "facial pressure and purulent nasal discharge for ten days",
+        "vitals": {
+          "bp": "118/76",
+          "hr": 82,
+          "temp_f": 101.2,
+          "spo2": 97
+        },
+        "medications": [
+          {
+            "name": "amoxicillin-clavulanate",
+            "dose": "875 mg",
+            "frequency": "twice daily",
+            "route": "PO"
+          },
+          {
+            "name": "pseudoephedrine",
+            "dose": "30 mg",
+            "frequency": "every 6 hours",
+            "route": "PO"
+          }
+        ],
+        "diagnoses": [
+          {
+            "description": "acute bacterial sinusitis",
+            "icd10": "J01.90"
+          }
+        ],
+        "plan": [
+          "start amoxicillin-clavulanate 875 mg twice daily for 7 days",
+          "saline nasal rinse twice a day",
+          "pseudoephedrine 30 mg every 6 hours as needed for congestion",
+          "call if not significantly better in 5 days"
+        ],
+        "follow_up": {
+          "interval_days": null,
+          "reason": "call if not improving in 5 days"
+        }
+      },
+      "scores": {
+        "chief_complaint": 1,
+        "vitals": 1,
+        "medications": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "diagnoses": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "icd10_bonus": 1
+        },
+        "plan": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "follow_up": 1
+      },
+      "aggregate_f1": 1,
+      "schema_invalid": false,
+      "hallucinations": [
+        {
+          "field_path": "chief_complaint",
+          "value": "facial pressure and purulent nasal discharge for ten days",
+          "reason": "no textual support found in transcript"
+        },
+        {
+          "field_path": "plan[1]",
+          "value": "saline nasal rinse twice a day",
+          "reason": "plan item not supported by transcript"
+        },
+        {
+          "field_path": "follow_up.reason",
+          "value": "call if not improving in 5 days",
+          "reason": "follow-up reason not in transcript"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "request": {
+            "system": [
+              {
+                "text": "You are a clinical-information extraction tool. The user will provide a single doctor-patient encounter transcript. Your job is to extract the structured fields and call the `record_extraction` tool exactly once.\n\nRules:\n- Return values strictly in the schema. Do NOT invent fields.\n- For vitals not mentioned in the transcript, use null. Do NOT guess.\n- Medication routes use abbreviations (PO, IV, IM, topical, inhaled, SL, PR). Default to \"PO\" only if the transcript clearly implies oral administration; otherwise null.\n- chief_complaint must be a brief clinical summary in the patient's perspective, not a sentence.\n- ICD-10 codes are optional; include them only when you are confident.\n- Plan items are concise free-text statements, one per discrete action.\n- follow_up.interval_days is integer days; \"no follow-up\" → null.\n- Do NOT add any commentary; only the tool call.\n\nREASONING PROCESS (private — do not output text, but use these steps internally before calling the tool):\n1. Identify the chief complaint from the patient's first substantive statement.\n2. Scan for any vitals block ([Vitals: ...] or \"BP\", \"HR\", \"Temp\", \"SpO2\"); leave null when missing.\n3. Walk the transcript top to bottom; whenever a medication is named, capture {name, dose, frequency, route}. Default frequency = null when not stated.\n4. Resolve diagnoses from the doctor's assessment statements (\"this looks like…\", \"I'm diagnosing…\"). Add ICD-10 only for canonical, well-known codes (J06.9, E11.9, R51.9, K21.9).\n5. Plan = the doctor's instructions, one per discrete action.\n6. follow_up.interval_days: parse phrases like \"two weeks\" → 14, \"three months\" → 90, \"no follow-up needed\" → null.\n7. Cross-check: every value you put in the JSON should be traceable to a span in the transcript. If you can't trace it, prefer null.",
+                "cache_control": {
+                  "type": "ephemeral"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "role": "user",
+                "content": "TRANSCRIPT:\n```\n[Visit type: in-person]\n[Vitals at intake: BP 118/76, HR 82, Temp 101.2, SpO2 97%]\n\nDoctor: Good morning, Daniel. What's going on?\nPatient: I've had this pressure behind my eyes and cheeks for like ten days. It started as a cold but now it's just bad pressure and yellow-green stuff coming out my nose.\nDoctor: Any fever?\nPatient: On and off. Today it was 101.\nDoctor: Tooth pain when you lean forward?\nPatient: Yeah, especially in my upper teeth.\nDoctor: Tenderness over your maxillary sinuses, that's where I'm pressing. Yes, those are tender. Given the duration past 10 days with worsening symptoms, this looks like acute bacterial sinusitis. I'm going to start you on amoxicillin-clavulanate 875 mg twice daily for 7 days. Use a saline rinse twice a day, and you can take pseudoephedrine 30 mg every 6 hours for the congestion if it doesn't keep you awake.\nPatient: Got it.\nDoctor: If you're not significantly better in 5 days, call us. Otherwise no follow-up needed.\n\n```\n\nThink through the 7 reasoning steps internally, then call record_extraction with the result."
+              }
+            ],
+            "tool": "record_extraction"
+          },
+          "response": {
+            "tool_input": {
+              "chief_complaint": "facial pressure and purulent nasal discharge for ten days",
+              "vitals": {
+                "bp": "118/76",
+                "hr": 82,
+                "temp_f": 101.2,
+                "spo2": 97
+              },
+              "medications": [
+                {
+                  "name": "amoxicillin-clavulanate",
+                  "dose": "875 mg",
+                  "frequency": "twice daily",
+                  "route": "PO"
+                },
+                {
+                  "name": "pseudoephedrine",
+                  "dose": "30 mg",
+                  "frequency": "every 6 hours",
+                  "route": "PO"
+                }
+              ],
+              "diagnoses": [
+                {
+                  "description": "acute bacterial sinusitis",
+                  "icd10": "J01.90"
+                }
+              ],
+              "plan": [
+                "start amoxicillin-clavulanate 875 mg twice daily for 7 days",
+                "saline nasal rinse twice a day",
+                "pseudoephedrine 30 mg every 6 hours as needed for congestion",
+                "call if not significantly better in 5 days"
+              ],
+              "follow_up": {
+                "interval_days": null,
+                "reason": "call if not improving in 5 days"
+              }
+            },
+            "text": "",
+            "stop_reason": "tool_use"
+          },
+          "tokens_in": 100,
+          "tokens_out": 50,
+          "cache_read": 0,
+          "cache_write": 0,
+          "schema_valid": true,
+          "validation_errors": [],
+          "duration_ms": 0
+        }
+      ],
+      "tokens_in": 100,
+      "tokens_out": 50,
+      "cache_read": 0,
+      "cache_write": 0,
+      "cost_usd": 0.00035,
+      "duration_ms": 0,
+      "error": null
+    },
+    {
+      "case_id": "case_003",
+      "transcript_id": "case_003",
+      "status": "completed",
+      "prediction": {
+        "chief_complaint": "severe sore throat with difficulty swallowing",
+        "vitals": {
+          "bp": null,
+          "hr": null,
+          "temp_f": null,
+          "spo2": null
+        },
+        "medications": [
+          {
+            "name": "penicillin V",
+            "dose": "500 mg",
+            "frequency": "four times a day",
+            "route": "PO"
+          },
+          {
+            "name": "acetaminophen",
+            "dose": "500 mg",
+            "frequency": "every 6 hours as needed",
+            "route": "PO"
+          }
+        ],
+        "diagnoses": [
+          {
+            "description": "suspected streptococcal pharyngitis",
+            "icd10": "J02.0"
+          }
+        ],
+        "plan": [
+          "rapid strep test at the lab today",
+          "start penicillin V 500 mg four times a day for 10 days if positive",
+          "acetaminophen 500 mg every 6 hours as needed for pain",
+          "warm salt water gargles and rest",
+          "message if not improving in 3 days on antibiotics"
+        ],
+        "follow_up": {
+          "interval_days": null,
+          "reason": null
+        }
+      },
+      "scores": {
+        "chief_complaint": 1,
+        "vitals": 1,
+        "medications": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "diagnoses": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "icd10_bonus": 1
+        },
+        "plan": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "follow_up": 1
+      },
+      "aggregate_f1": 1,
+      "schema_invalid": false,
+      "hallucinations": [
+        {
+          "field_path": "chief_complaint",
+          "value": "severe sore throat with difficulty swallowing",
+          "reason": "no textual support found in transcript"
+        },
+        {
+          "field_path": "diagnoses[0].description",
+          "value": "suspected streptococcal pharyngitis",
+          "reason": "diagnosis not supported by transcript text"
+        },
+        {
+          "field_path": "plan[1]",
+          "value": "start penicillin V 500 mg four times a day for 10 days if positive",
+          "reason": "plan item not supported by transcript"
+        },
+        {
+          "field_path": "plan[3]",
+          "value": "warm salt water gargles and rest",
+          "reason": "plan item not supported by transcript"
+        },
+        {
+          "field_path": "plan[4]",
+          "value": "message if not improving in 3 days on antibiotics",
+          "reason": "plan item not supported by transcript"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "request": {
+            "system": [
+              {
+                "text": "You are a clinical-information extraction tool. The user will provide a single doctor-patient encounter transcript. Your job is to extract the structured fields and call the `record_extraction` tool exactly once.\n\nRules:\n- Return values strictly in the schema. Do NOT invent fields.\n- For vitals not mentioned in the transcript, use null. Do NOT guess.\n- Medication routes use abbreviations (PO, IV, IM, topical, inhaled, SL, PR). Default to \"PO\" only if the transcript clearly implies oral administration; otherwise null.\n- chief_complaint must be a brief clinical summary in the patient's perspective, not a sentence.\n- ICD-10 codes are optional; include them only when you are confident.\n- Plan items are concise free-text statements, one per discrete action.\n- follow_up.interval_days is integer days; \"no follow-up\" → null.\n- Do NOT add any commentary; only the tool call.\n\nREASONING PROCESS (private — do not output text, but use these steps internally before calling the tool):\n1. Identify the chief complaint from the patient's first substantive statement.\n2. Scan for any vitals block ([Vitals: ...] or \"BP\", \"HR\", \"Temp\", \"SpO2\"); leave null when missing.\n3. Walk the transcript top to bottom; whenever a medication is named, capture {name, dose, frequency, route}. Default frequency = null when not stated.\n4. Resolve diagnoses from the doctor's assessment statements (\"this looks like…\", \"I'm diagnosing…\"). Add ICD-10 only for canonical, well-known codes (J06.9, E11.9, R51.9, K21.9).\n5. Plan = the doctor's instructions, one per discrete action.\n6. follow_up.interval_days: parse phrases like \"two weeks\" → 14, \"three months\" → 90, \"no follow-up needed\" → null.\n7. Cross-check: every value you put in the JSON should be traceable to a span in the transcript. If you can't trace it, prefer null.",
+                "cache_control": {
+                  "type": "ephemeral"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "role": "user",
+                "content": "TRANSCRIPT:\n```\n[Visit type: telehealth]\n\nDoctor: Hi Priya, how are you feeling?\nPatient: My throat is killing me. Started yesterday afternoon. I can barely swallow.\nDoctor: Any cough or runny nose?\nPatient: No, none. Just throat. And I think I have a fever, I felt really hot last night.\nDoctor: Any white spots when you look in the mirror?\nPatient: Yeah, my tonsils have white patches.\nDoctor: That plus no cough plus the fever — sounds like strep. I'd like you to stop by the lab today for a rapid strep, and assuming positive I'll call in penicillin V 500 mg four times a day for 10 days.\nPatient: I'm not allergic.\nDoctor: Good. In the meantime, take acetaminophen 500 mg every 6 hours as needed, gargle with warm salt water, and rest. If the rapid is negative we'll reassess.\nPatient: Thanks.\nDoctor: No follow-up scheduled — just message us if you're not better in 3 days on antibiotics.\n\n```\n\nThink through the 7 reasoning steps internally, then call record_extraction with the result."
+              }
+            ],
+            "tool": "record_extraction"
+          },
+          "response": {
+            "tool_input": {
+              "chief_complaint": "severe sore throat with difficulty swallowing",
+              "vitals": {
+                "bp": null,
+                "hr": null,
+                "temp_f": null,
+                "spo2": null
+              },
+              "medications": [
+                {
+                  "name": "penicillin V",
+                  "dose": "500 mg",
+                  "frequency": "four times a day",
+                  "route": "PO"
+                },
+                {
+                  "name": "acetaminophen",
+                  "dose": "500 mg",
+                  "frequency": "every 6 hours as needed",
+                  "route": "PO"
+                }
+              ],
+              "diagnoses": [
+                {
+                  "description": "suspected streptococcal pharyngitis",
+                  "icd10": "J02.0"
+                }
+              ],
+              "plan": [
+                "rapid strep test at the lab today",
+                "start penicillin V 500 mg four times a day for 10 days if positive",
+                "acetaminophen 500 mg every 6 hours as needed for pain",
+                "warm salt water gargles and rest",
+                "message if not improving in 3 days on antibiotics"
+              ],
+              "follow_up": {
+                "interval_days": null,
+                "reason": null
+              }
+            },
+            "text": "",
+            "stop_reason": "tool_use"
+          },
+          "tokens_in": 100,
+          "tokens_out": 50,
+          "cache_read": 0,
+          "cache_write": 0,
+          "schema_valid": true,
+          "validation_errors": [],
+          "duration_ms": 0
+        }
+      ],
+      "tokens_in": 100,
+      "tokens_out": 50,
+      "cache_read": 0,
+      "cache_write": 0,
+      "cost_usd": 0.00035,
+      "duration_ms": 0,
+      "error": null
+    },
+    {
+      "case_id": "case_004",
+      "transcript_id": "case_004",
+      "status": "completed",
+      "prediction": {
+        "chief_complaint": "persistent cough for three weeks after a cold",
+        "vitals": {
+          "bp": "124/80",
+          "hr": 92,
+          "temp_f": 99.8,
+          "spo2": 95
+        },
+        "medications": [
+          {
+            "name": "albuterol",
+            "dose": "two puffs",
+            "frequency": "every 4 to 6 hours as needed",
+            "route": "inhaled"
+          },
+          {
+            "name": "benzonatate",
+            "dose": "100 mg",
+            "frequency": "three times daily",
+            "route": "PO"
+          }
+        ],
+        "diagnoses": [
+          {
+            "description": "post-viral acute bronchitis",
+            "icd10": "J20.9"
+          }
+        ],
+        "plan": [
+          "albuterol inhaler two puffs every 4 to 6 hours as needed",
+          "benzonatate 100 mg three times daily for cough suppression",
+          "return for chest X-ray if cough persists past four weeks or fevers develop"
+        ],
+        "follow_up": {
+          "interval_days": null,
+          "reason": "return if cough persists past four weeks or fevers develop"
+        }
+      },
+      "scores": {
+        "chief_complaint": 1,
+        "vitals": 1,
+        "medications": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "diagnoses": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "icd10_bonus": 1
+        },
+        "plan": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "follow_up": 1
+      },
+      "aggregate_f1": 1,
+      "schema_invalid": false,
+      "hallucinations": [
+        {
+          "field_path": "chief_complaint",
+          "value": "persistent cough for three weeks after a cold",
+          "reason": "no textual support found in transcript"
+        },
+        {
+          "field_path": "plan[2]",
+          "value": "return for chest X-ray if cough persists past four weeks or fevers develop",
+          "reason": "plan item not supported by transcript"
+        },
+        {
+          "field_path": "follow_up.reason",
+          "value": "return if cough persists past four weeks or fevers develop",
+          "reason": "follow-up reason not in transcript"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "request": {
+            "system": [
+              {
+                "text": "You are a clinical-information extraction tool. The user will provide a single doctor-patient encounter transcript. Your job is to extract the structured fields and call the `record_extraction` tool exactly once.\n\nRules:\n- Return values strictly in the schema. Do NOT invent fields.\n- For vitals not mentioned in the transcript, use null. Do NOT guess.\n- Medication routes use abbreviations (PO, IV, IM, topical, inhaled, SL, PR). Default to \"PO\" only if the transcript clearly implies oral administration; otherwise null.\n- chief_complaint must be a brief clinical summary in the patient's perspective, not a sentence.\n- ICD-10 codes are optional; include them only when you are confident.\n- Plan items are concise free-text statements, one per discrete action.\n- follow_up.interval_days is integer days; \"no follow-up\" → null.\n- Do NOT add any commentary; only the tool call.\n\nREASONING PROCESS (private — do not output text, but use these steps internally before calling the tool):\n1. Identify the chief complaint from the patient's first substantive statement.\n2. Scan for any vitals block ([Vitals: ...] or \"BP\", \"HR\", \"Temp\", \"SpO2\"); leave null when missing.\n3. Walk the transcript top to bottom; whenever a medication is named, capture {name, dose, frequency, route}. Default frequency = null when not stated.\n4. Resolve diagnoses from the doctor's assessment statements (\"this looks like…\", \"I'm diagnosing…\"). Add ICD-10 only for canonical, well-known codes (J06.9, E11.9, R51.9, K21.9).\n5. Plan = the doctor's instructions, one per discrete action.\n6. follow_up.interval_days: parse phrases like \"two weeks\" → 14, \"three months\" → 90, \"no follow-up needed\" → null.\n7. Cross-check: every value you put in the JSON should be traceable to a span in the transcript. If you can't trace it, prefer null.",
+                "cache_control": {
+                  "type": "ephemeral"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "role": "user",
+                "content": "TRANSCRIPT:\n```\n[Visit type: in-person]\n[Vitals at intake: BP 124/80, HR 92, Temp 99.8, SpO2 95%]\n\nDoctor: Hello Sam, I hear you've had a cough for three weeks?\nPatient: Yeah. Started after a cold. The runny nose went away but this cough just won't quit. It's mostly dry, sometimes I bring up a little clear stuff.\nDoctor: Any wheezing? Shortness of breath when you walk up stairs?\nPatient: A little wheeze at night. Stairs are okay.\nDoctor: Lungs have some scattered wheezes but no crackles. SpO2 is 95, fine. This sounds like post-viral acute bronchitis with some bronchospasm. Antibiotics aren't indicated here. I'm going to give you an albuterol inhaler — two puffs every 4 to 6 hours as needed for wheeze and cough — and benzonatate 100 mg three times daily for cough suppression.\nPatient: Okay.\nDoctor: Should resolve over the next two weeks. If it lingers past four weeks total or you start having fevers, come back and we'll get a chest X-ray.\n\n```\n\nThink through the 7 reasoning steps internally, then call record_extraction with the result."
+              }
+            ],
+            "tool": "record_extraction"
+          },
+          "response": {
+            "tool_input": {
+              "chief_complaint": "persistent cough for three weeks after a cold",
+              "vitals": {
+                "bp": "124/80",
+                "hr": 92,
+                "temp_f": 99.8,
+                "spo2": 95
+              },
+              "medications": [
+                {
+                  "name": "albuterol",
+                  "dose": "two puffs",
+                  "frequency": "every 4 to 6 hours as needed",
+                  "route": "inhaled"
+                },
+                {
+                  "name": "benzonatate",
+                  "dose": "100 mg",
+                  "frequency": "three times daily",
+                  "route": "PO"
+                }
+              ],
+              "diagnoses": [
+                {
+                  "description": "post-viral acute bronchitis",
+                  "icd10": "J20.9"
+                }
+              ],
+              "plan": [
+                "albuterol inhaler two puffs every 4 to 6 hours as needed",
+                "benzonatate 100 mg three times daily for cough suppression",
+                "return for chest X-ray if cough persists past four weeks or fevers develop"
+              ],
+              "follow_up": {
+                "interval_days": null,
+                "reason": "return if cough persists past four weeks or fevers develop"
+              }
+            },
+            "text": "",
+            "stop_reason": "tool_use"
+          },
+          "tokens_in": 100,
+          "tokens_out": 50,
+          "cache_read": 0,
+          "cache_write": 0,
+          "schema_valid": true,
+          "validation_errors": [],
+          "duration_ms": 0
+        }
+      ],
+      "tokens_in": 100,
+      "tokens_out": 50,
+      "cache_read": 0,
+      "cache_write": 0,
+      "cost_usd": 0.00035,
+      "duration_ms": 0,
+      "error": null
+    },
+    {
+      "case_id": "case_005",
+      "transcript_id": "case_005",
+      "status": "completed",
+      "prediction": {
+        "chief_complaint": "right ear pain and fever in toddler",
+        "vitals": {
+          "bp": null,
+          "hr": 118,
+          "temp_f": 102.6,
+          "spo2": 99
+        },
+        "medications": [
+          {
+            "name": "amoxicillin",
+            "dose": "400 mg",
+            "frequency": "twice a day",
+            "route": "PO"
+          },
+          {
+            "name": "children's ibuprofen",
+            "dose": "5 mL",
+            "frequency": "every 6 hours as needed",
+            "route": "PO"
+          }
+        ],
+        "diagnoses": [
+          {
+            "description": "acute otitis media, right ear",
+            "icd10": "H66.91"
+          }
+        ],
+        "plan": [
+          "amoxicillin 400 mg by mouth twice a day for 10 days",
+          "children's ibuprofen 5 mL every 6 hours as needed for pain and fever",
+          "return in 48 to 72 hours if not improving or worsening"
+        ],
+        "follow_up": {
+          "interval_days": null,
+          "reason": "return if not improving in 48 to 72 hours"
+        }
+      },
+      "scores": {
+        "chief_complaint": 1,
+        "vitals": 1,
+        "medications": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "diagnoses": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "icd10_bonus": 1
+        },
+        "plan": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "follow_up": 1
+      },
+      "aggregate_f1": 1,
+      "schema_invalid": false,
+      "hallucinations": [
+        {
+          "field_path": "chief_complaint",
+          "value": "right ear pain and fever in toddler",
+          "reason": "no textual support found in transcript"
+        },
+        {
+          "field_path": "diagnoses[0].description",
+          "value": "acute otitis media, right ear",
+          "reason": "diagnosis not supported by transcript text"
+        },
+        {
+          "field_path": "plan[1]",
+          "value": "children's ibuprofen 5 mL every 6 hours as needed for pain and fever",
+          "reason": "plan item not supported by transcript"
+        },
+        {
+          "field_path": "plan[2]",
+          "value": "return in 48 to 72 hours if not improving or worsening",
+          "reason": "plan item not supported by transcript"
+        },
+        {
+          "field_path": "follow_up.reason",
+          "value": "return if not improving in 48 to 72 hours",
+          "reason": "follow-up reason not in transcript"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "request": {
+            "system": [
+              {
+                "text": "You are a clinical-information extraction tool. The user will provide a single doctor-patient encounter transcript. Your job is to extract the structured fields and call the `record_extraction` tool exactly once.\n\nRules:\n- Return values strictly in the schema. Do NOT invent fields.\n- For vitals not mentioned in the transcript, use null. Do NOT guess.\n- Medication routes use abbreviations (PO, IV, IM, topical, inhaled, SL, PR). Default to \"PO\" only if the transcript clearly implies oral administration; otherwise null.\n- chief_complaint must be a brief clinical summary in the patient's perspective, not a sentence.\n- ICD-10 codes are optional; include them only when you are confident.\n- Plan items are concise free-text statements, one per discrete action.\n- follow_up.interval_days is integer days; \"no follow-up\" → null.\n- Do NOT add any commentary; only the tool call.\n\nREASONING PROCESS (private — do not output text, but use these steps internally before calling the tool):\n1. Identify the chief complaint from the patient's first substantive statement.\n2. Scan for any vitals block ([Vitals: ...] or \"BP\", \"HR\", \"Temp\", \"SpO2\"); leave null when missing.\n3. Walk the transcript top to bottom; whenever a medication is named, capture {name, dose, frequency, route}. Default frequency = null when not stated.\n4. Resolve diagnoses from the doctor's assessment statements (\"this looks like…\", \"I'm diagnosing…\"). Add ICD-10 only for canonical, well-known codes (J06.9, E11.9, R51.9, K21.9).\n5. Plan = the doctor's instructions, one per discrete action.\n6. follow_up.interval_days: parse phrases like \"two weeks\" → 14, \"three months\" → 90, \"no follow-up needed\" → null.\n7. Cross-check: every value you put in the JSON should be traceable to a span in the transcript. If you can't trace it, prefer null.",
+                "cache_control": {
+                  "type": "ephemeral"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "role": "user",
+                "content": "TRANSCRIPT:\n```\n[Visit type: in-person, pediatric mom-and-child]\n[Vitals: HR 118, Temp 102.6, SpO2 99%]\n\nDoctor: Hi, what's been going on with Mateo?\nPatient (mom): He's been pulling at his right ear since yesterday and was up most of the night crying. He had a runny nose last week.\nDoctor: Any drainage from the ear?\nPatient: No.\nDoctor: Let me look. Right tympanic membrane is bulging and red, no perforation. Left ear is fine. He's got a clear acute otitis media on the right.\nPatient: Does he need antibiotics?\nDoctor: At his age and with that fever of 102.6, yes. Amoxicillin 400 mg by mouth twice a day for 10 days. Also give him children's ibuprofen, weight-based dosing — 5 mL every 6 hours as needed for pain and fever.\nPatient: Okay.\nDoctor: If he's not better in 48 to 72 hours or it gets worse, bring him back. Otherwise no follow-up needed.\n\n```\n\nThink through the 7 reasoning steps internally, then call record_extraction with the result."
+              }
+            ],
+            "tool": "record_extraction"
+          },
+          "response": {
+            "tool_input": {
+              "chief_complaint": "right ear pain and fever in toddler",
+              "vitals": {
+                "bp": null,
+                "hr": 118,
+                "temp_f": 102.6,
+                "spo2": 99
+              },
+              "medications": [
+                {
+                  "name": "amoxicillin",
+                  "dose": "400 mg",
+                  "frequency": "twice a day",
+                  "route": "PO"
+                },
+                {
+                  "name": "children's ibuprofen",
+                  "dose": "5 mL",
+                  "frequency": "every 6 hours as needed",
+                  "route": "PO"
+                }
+              ],
+              "diagnoses": [
+                {
+                  "description": "acute otitis media, right ear",
+                  "icd10": "H66.91"
+                }
+              ],
+              "plan": [
+                "amoxicillin 400 mg by mouth twice a day for 10 days",
+                "children's ibuprofen 5 mL every 6 hours as needed for pain and fever",
+                "return in 48 to 72 hours if not improving or worsening"
+              ],
+              "follow_up": {
+                "interval_days": null,
+                "reason": "return if not improving in 48 to 72 hours"
+              }
+            },
+            "text": "",
+            "stop_reason": "tool_use"
+          },
+          "tokens_in": 100,
+          "tokens_out": 50,
+          "cache_read": 0,
+          "cache_write": 0,
+          "schema_valid": true,
+          "validation_errors": [],
+          "duration_ms": 0
+        }
+      ],
+      "tokens_in": 100,
+      "tokens_out": 50,
+      "cache_read": 0,
+      "cache_write": 0,
+      "cost_usd": 0.00035,
+      "duration_ms": 0,
+      "error": null
+    }
+  ]
+}
