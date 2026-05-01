@@ -1,5 +1,4 @@
 import { auth } from "@test-evals/auth";
-import { env } from "@test-evals/env/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -13,12 +12,9 @@ app.use(logger());
 app.use(
   "/*",
   cors({
-    origin: (origin) => {
-      // For the demo: Allow all origins to avoid any blockers
-      return origin || env.CORS_ORIGIN;
-    },
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["*"], // Allow all headers
+    allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key", "better-auth-agent"],
     credentials: true,
     exposeHeaders: ["Set-Cookie"],
   }),
