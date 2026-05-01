@@ -31,6 +31,6 @@ app.route("/api/v1/compare", compareRouter);
 app.route("/api/v1/transcripts", transcriptsRouter);
 
 export default {
-  port: 8787,
+  port: Number(process.env.PORT) || 8787,
   fetch: app.fetch,
 };
