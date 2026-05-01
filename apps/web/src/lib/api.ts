@@ -1,5 +1,6 @@
 import { env } from "@test-evals/env/web";
 const BASE = env.NEXT_PUBLIC_SERVER_URL;
+console.log("DEBUG: Current API Base URL is:", BASE);
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
