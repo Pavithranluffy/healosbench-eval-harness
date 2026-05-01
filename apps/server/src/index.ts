@@ -15,26 +15,30 @@ app.use(async (c, next) => {
   await next();
 });
 
-// 1. MANUAL HARDCODED CORS - No more library issues
+// 1. ABSOLUTE CORS INTERCEPTOR
 app.use("*", async (c, next) => {
-  const origin = c.req.header("origin");
-  const isVercel = origin?.endsWith(".vercel.app");
-  const allowedOrigin = isVercel ? origin! : "https://healosbench-eval-harness.vercel.app";
-
-  console.log(`[DEBUG] Request Method: ${c.req.method}, Origin: ${origin}, Allowed: ${allowedOrigin}`);
-
+  // Handle Preflight (OPTIONS) immediately
   if (c.req.method === "OPTIONS") {
-    c.header("Access-Control-Allow-Origin", allowedOrigin);
-    c.header("Access-Control-Allow-Credentials", "true");
-    c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    c.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent");
-    return c.text("", 204);
+    const origin = c.req.header("origin") || "*";
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent",
+        "Access-Control-Allow-Credentials": "true",
+      },
+    });
   }
 
   await next();
-  
-  c.header("Access-Control-Allow-Origin", allowedOrigin);
-  c.header("Access-Control-Allow-Credentials", "true");
+
+  // Force headers on the way out
+  const origin = c.req.header("origin") || "*";
+  c.res.headers.set("Access-Control-Allow-Origin", origin);
+  c.res.headers.set("Access-Control-Allow-Credentials", "true");
+  c.res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  c.res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent");
 });
 
 app.use(logger());
