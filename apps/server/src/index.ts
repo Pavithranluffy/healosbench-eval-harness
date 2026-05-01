@@ -11,20 +11,20 @@ const app = new Hono();
 
 app.use(logger());
 app.use(
-  "/*",
+  "*",
   cors({
-    origin: (origin) => {
-      // For the demo: Allow all origins to avoid any blockers
-      return origin || env.CORS_ORIGIN;
-    },
+    origin: (origin) => origin || "*",
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["*"], // Allow all headers
+    allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key", "better-auth-agent"],
     credentials: true,
     exposeHeaders: ["Set-Cookie"],
   }),
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+// Force success on all OPTIONS preflights
+app.options("*", (c) => c.text("", 204));
+
+app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
 
 app.get("/", (c) => c.text("OK"));
 app.get("/health", (c) => c.json({ status: "ok", ts: new Date().toISOString() }));
