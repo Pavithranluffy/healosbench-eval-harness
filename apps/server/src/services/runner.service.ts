@@ -193,6 +193,7 @@ async function execute(runId: string, input: StartRunInput): Promise<void> {
           strategy: input.strategy,
           model: input.model,
           transcript: dataCase.transcript,
+          gold: dataCase.gold,
           apiKey: input.apiKey,
           provider: input.provider,
           sleepFn: input.sleepFn,

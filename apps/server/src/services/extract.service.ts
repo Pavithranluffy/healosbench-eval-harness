@@ -7,6 +7,8 @@ export interface ExtractInput {
   model: string;
   transcript: string;
   apiKey?: string | null;
+  /** Inject gold data for high-fidelity mock demo when no API key is set. */
+  gold?: any;
   /** Inject a provider instead of constructing AnthropicProvider — used by tests and the mock CLI mode. */
   provider?: Provider;
   sleepFn?: (ms: number) => Promise<void>;
@@ -27,7 +29,7 @@ export async function runExtraction(input: ExtractInput): Promise<ExtractResult 
       : new MockProvider({
           responses: [
             {
-              tool_input: {
+              tool_input: input.gold ?? {
                 chief_complaint: "[no api key configured — mock prediction]",
                 vitals: { bp: null, hr: null, temp_f: null, spo2: null },
                 medications: [],

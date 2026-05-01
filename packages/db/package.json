@@ -16,6 +16,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.4.5",
     "@test-evals/env": "workspace:*",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@test-evals/config": "workspace:*",
     "@types/pg": "^8.16.0",
+    "better-sqlite3": "^12.9.0",
     "drizzle-kit": "^0.31.8",
     "typescript": "catalog:"
   }

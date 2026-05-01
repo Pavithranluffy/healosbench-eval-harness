@@ -29,19 +29,47 @@ export default function RunsPage() {
         body: JSON.stringify({ strategy, model }),
       });
       await refresh();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to start run. Make sure the server is running and you are signed in if required.");
     } finally {
       setBusy(false);
     }
   }
 
+  const bestF1 = Math.max(...runs.map((r) => r.aggregate?.overall_f1 ?? 0), 0);
+  const totalCost = runs.reduce((acc, r) => acc + r.total_cost_usd, 0);
+
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Eval Runs</h1>
-        <Link href="/compare" className="underline text-sm">Compare two runs →</Link>
+    <div className="container mx-auto max-w-6xl px-4 py-8">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Evaluation Dashboard</h1>
+          <p className="text-zinc-500">Structured clinical extraction benchmarking</p>
+        </div>
+        <Link href="/compare" className="bg-zinc-100 hover:bg-zinc-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          Compare Strategies →
+        </Link>
       </div>
 
-      <div className="rounded-lg border p-4 mb-6 flex flex-wrap gap-2 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="border rounded-xl p-6 bg-white dark:bg-zinc-950 shadow-sm">
+          <div className="text-sm text-zinc-500 mb-1">Total Runs</div>
+          <div className="text-3xl font-bold">{runs.length}</div>
+        </div>
+        <div className="border rounded-xl p-6 bg-white dark:bg-zinc-950 shadow-sm">
+          <div className="text-sm text-zinc-500 mb-1">Best Overall F1</div>
+          <div className="text-3xl font-bold text-green-600">{bestF1.toFixed(3)}</div>
+        </div>
+        <div className="border rounded-xl p-6 bg-white dark:bg-zinc-950 shadow-sm">
+          <div className="text-sm text-zinc-500 mb-1">Total Budget Spent</div>
+          <div className="text-3xl font-bold">${totalCost.toFixed(4)}</div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-zinc-50/50 dark:bg-zinc-900/50 p-6 mb-8">
+        <h3 className="font-semibold mb-4">Start New Evaluation</h3>
+        <div className="flex flex-wrap gap-4 items-end">
         <label className="flex flex-col text-xs">
           strategy
           <select
@@ -70,46 +98,55 @@ export default function RunsPage() {
           {busy ? "starting…" : "Start run"}
         </button>
       </div>
+    </div>
 
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="text-left border-b">
-            <th className="py-2 pr-2">id</th>
-            <th>strategy</th>
-            <th>model</th>
-            <th>prompt_hash</th>
-            <th>status</th>
-            <th>cases</th>
-            <th>F1</th>
-            <th>cost</th>
-            <th>cache_read</th>
-            <th>duration</th>
-          </tr>
-        </thead>
-        <tbody>
-          {runs.map((r) => (
-            <tr key={r.id} className="border-b hover:bg-zinc-50 dark:hover:bg-zinc-900">
-              <td className="py-1 pr-2"><Link className="underline" href={`/runs/${r.id}`}>{r.id}</Link></td>
-              <td>{r.strategy}</td>
-              <td className="font-mono text-xs">{r.model}</td>
-              <td className="font-mono text-xs">{r.prompt_hash}</td>
-              <td>{r.status}</td>
-              <td>{r.completed_cases}/{r.total_cases}</td>
-              <td>{r.aggregate?.overall_f1?.toFixed(3) ?? "—"}</td>
-              <td>${r.total_cost_usd.toFixed(4)}</td>
-              <td>{r.total_cache_read.toLocaleString()}</td>
-              <td>{(r.duration_ms / 1000).toFixed(1)}s</td>
+    <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-left border-b text-zinc-500 font-medium">
+              <th className="py-4 pr-4">Run ID</th>
+              <th className="py-4">Strategy</th>
+              <th className="py-4">Model</th>
+              <th className="py-4">Status</th>
+              <th className="py-4">Progress</th>
+              <th className="py-4">Overall F1</th>
+              <th className="py-4">Cost</th>
+              <th className="py-4 text-right">Actions</th>
             </tr>
-          ))}
-          {runs.length === 0 && (
-            <tr>
-              <td colSpan={10} className="text-center py-6 text-zinc-500">
-                No runs yet — start one above.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {runs.map((r) => (
+              <tr key={r.id} className="border-b hover:bg-zinc-50/80 dark:hover:bg-zinc-900/80 transition-colors">
+                <td className="py-4 pr-4 font-mono text-xs">{r.id}</td>
+                <td className="py-4 capitalize">{r.strategy.replace("_", " ")}</td>
+                <td className="py-4 font-mono text-[10px] text-zinc-500">{r.model}</td>
+                <td className="py-4">
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                    r.status === "completed" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {r.status}
+                  </span>
+                </td>
+                <td className="py-4 text-zinc-600">{r.completed_cases}/{r.total_cases}</td>
+                <td className="py-4 font-bold">{r.aggregate?.overall_f1?.toFixed(3) ?? "—"}</td>
+                <td className="py-4 text-zinc-500">${r.total_cost_usd.toFixed(4)}</td>
+                <td className="py-4 text-right">
+                  <Link className="text-black dark:text-white font-medium hover:underline" href={`/runs/${r.id}`}>
+                    Details →
+                  </Link>
+                </td>
+              </tr>
+            ))}
+            {runs.length === 0 && (
+              <tr>
+                <td colSpan={8} className="text-center py-12 text-zinc-400 italic">
+                  No evaluation runs found. Start your first run above!
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

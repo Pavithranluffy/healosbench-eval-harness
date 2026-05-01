@@ -8,8 +8,8 @@ dotenv.config({
 export default defineConfig({
   schema: "./src/schema",
   out: "./src/migrations",
-  dialect: "postgresql",
+  dialect: "sqlite",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "",
+    url: process.env.DATABASE_URL || "file:./healosbench.db",
   },
 });

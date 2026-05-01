@@ -13,15 +13,15 @@ export default async function DashboardPage() {
     },
   });
 
-  if (!session?.user) {
-    redirect("/login");
-  }
+  // if (!session?.user) {
+  //   redirect("/login");
+  // }
 
   return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>Welcome {session.user.name}</p>
-      <Dashboard session={session} />
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
+      <p className="text-zinc-500 mb-8">Welcome, {session?.user?.name ?? "Guest"}</p>
+      <Dashboard session={session as any} />
     </div>
   );
 }

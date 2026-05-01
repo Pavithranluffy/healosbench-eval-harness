@@ -1,17 +1,12 @@
 import { relations } from "drizzle-orm";
 import {
-  pgTable,
+  sqliteTable,
   text,
-  timestamp,
   integer,
-  doublePrecision,
-  jsonb,
-  index,
-  uniqueIndex,
-  boolean,
-} from "drizzle-orm/pg-core";
+  real,
+} from "drizzle-orm/sqlite-core";
 
-export const runs = pgTable(
+export const runs = sqliteTable(
   "eval_run",
   {
     id: text("id").primaryKey(),
@@ -19,27 +14,26 @@ export const runs = pgTable(
     model: text("model").notNull(),
     promptHash: text("prompt_hash").notNull(),
     status: text("status").notNull().default("pending"),
-    datasetFilter: jsonb("dataset_filter").$type<string[] | null>(),
+    datasetFilter: text("dataset_filter", { mode: "json" }).$type<string[] | null>(),
     totalCases: integer("total_cases").notNull().default(0),
     completedCases: integer("completed_cases").notNull().default(0),
     failedCases: integer("failed_cases").notNull().default(0),
     schemaInvalidCount: integer("schema_invalid_count").notNull().default(0),
     hallucinationCount: integer("hallucination_count").notNull().default(0),
-    aggregate: jsonb("aggregate").$type<unknown>(),
+    aggregate: text("aggregate", { mode: "json" }).$type<unknown>(),
     totalTokensIn: integer("total_tokens_in").notNull().default(0),
     totalTokensOut: integer("total_tokens_out").notNull().default(0),
     totalCacheRead: integer("total_cache_read").notNull().default(0),
     totalCacheWrite: integer("total_cache_write").notNull().default(0),
-    totalCostUsd: doublePrecision("total_cost_usd").notNull().default(0),
+    totalCostUsd: real("total_cost_usd").notNull().default(0),
     durationMs: integer("duration_ms").notNull().default(0),
     error: text("error"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    completedAt: timestamp("completed_at"),
-  },
-  (t) => [index("eval_run_status_idx").on(t.status), index("eval_run_strategy_idx").on(t.strategy)],
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(new Date()),
+    completedAt: integer("completed_at", { mode: "timestamp" }),
+  }
 );
 
-export const cases = pgTable(
+export const cases = sqliteTable(
   "eval_case",
   {
     id: text("id").primaryKey(),
@@ -48,28 +42,24 @@ export const cases = pgTable(
       .references(() => runs.id, { onDelete: "cascade" }),
     transcriptId: text("transcript_id").notNull(),
     status: text("status").notNull().default("pending"),
-    prediction: jsonb("prediction").$type<unknown>(),
-    scores: jsonb("scores").$type<unknown>(),
-    aggregateF1: doublePrecision("aggregate_f1"),
-    schemaInvalid: boolean("schema_invalid").notNull().default(false),
-    hallucinations: jsonb("hallucinations").$type<unknown[]>().default([]),
+    prediction: text("prediction", { mode: "json" }).$type<unknown>(),
+    scores: text("scores", { mode: "json" }).$type<unknown>(),
+    aggregateF1: real("aggregate_f1"),
+    schemaInvalid: integer("schema_invalid", { mode: "boolean" }).notNull().default(false),
+    hallucinations: text("hallucinations", { mode: "json" }).$type<unknown[]>().default([]),
     tokensIn: integer("tokens_in").notNull().default(0),
     tokensOut: integer("tokens_out").notNull().default(0),
     cacheRead: integer("cache_read").notNull().default(0),
     cacheWrite: integer("cache_write").notNull().default(0),
-    costUsd: doublePrecision("cost_usd").notNull().default(0),
+    costUsd: real("cost_usd").notNull().default(0),
     durationMs: integer("duration_ms").notNull().default(0),
     error: text("error"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    completedAt: timestamp("completed_at"),
-  },
-  (t) => [
-    index("eval_case_run_idx").on(t.runId),
-    uniqueIndex("eval_case_run_transcript_uq").on(t.runId, t.transcriptId),
-  ],
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(new Date()),
+    completedAt: integer("completed_at", { mode: "timestamp" }),
+  }
 );
 
-export const attempts = pgTable(
+export const attempts = sqliteTable(
   "eval_attempt",
   {
     id: text("id").primaryKey(),
@@ -77,18 +67,17 @@ export const attempts = pgTable(
       .notNull()
       .references(() => cases.id, { onDelete: "cascade" }),
     attempt: integer("attempt").notNull(),
-    request: jsonb("request").$type<unknown>(),
-    response: jsonb("response").$type<unknown>(),
+    request: text("request", { mode: "json" }).$type<unknown>(),
+    response: text("response", { mode: "json" }).$type<unknown>(),
     tokensIn: integer("tokens_in").notNull().default(0),
     tokensOut: integer("tokens_out").notNull().default(0),
     cacheRead: integer("cache_read").notNull().default(0),
     cacheWrite: integer("cache_write").notNull().default(0),
-    schemaValid: boolean("schema_valid").notNull().default(false),
-    validationErrors: jsonb("validation_errors").$type<string[]>().default([]),
+    schemaValid: integer("schema_valid", { mode: "boolean" }).notNull().default(false),
+    validationErrors: text("validation_errors", { mode: "json" }).$type<string[]>().default([]),
     durationMs: integer("duration_ms").notNull().default(0),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (t) => [index("eval_attempt_case_idx").on(t.caseId)],
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(new Date()),
+  }
 );
 
 /**
@@ -96,16 +85,15 @@ export const attempts = pgTable(
  * Two POST /api/v1/runs with the same triple reuse the cached prediction
  * unless `force=true` is set.
  */
-export const idempotency = pgTable(
+export const idempotency = sqliteTable(
   "eval_idempotency",
   {
     key: text("key").primaryKey(),
     caseId: text("case_id")
       .notNull()
       .references(() => cases.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (t) => [index("eval_idempotency_case_idx").on(t.caseId)],
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(new Date()),
+  }
 );
 
 export const runsRelations = relations(runs, ({ many }) => ({
