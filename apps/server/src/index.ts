@@ -9,11 +9,11 @@ import { transcriptsRouter } from "./routes/transcripts";
 
 const app = new Hono();
 
-app.use(logger());
+// 1. GLOBAL CORS - Must be first
 app.use(
   "*",
   cors({
-    origin: (process.env.CORS_ORIGIN || "http://localhost:3000").replace(/\/$/, ""),
+    origin: (origin) => origin || "*",
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key", "better-auth-agent"],
     credentials: true,
@@ -21,9 +21,21 @@ app.use(
   }),
 );
 
-// Manual preflight handler for auth routes
-app.options("/api/auth/*", (c) => c.text("", 204));
-app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
+app.use(logger());
+
+// 2. Auth Handler with Manual CORS Injection
+app.all("/api/auth/*", async (c) => {
+  const res = await auth.handler(c.req.raw);
+  const newRes = new Response(res.body, res);
+  // Manually ensure CORS headers are present on auth responses
+  newRes.headers.set("Access-Control-Allow-Origin", c.req.header("origin") || "*");
+  newRes.headers.set("Access-Control-Allow-Credentials", "true");
+  newRes.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  newRes.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent");
+  return newRes;
+});
+
+app.options("*", (c) => c.text("", 204));
 
 app.get("/", (c) => c.text("OK"));
 app.get("/health", (c) => c.json({ status: "ok", ts: new Date().toISOString() }));
