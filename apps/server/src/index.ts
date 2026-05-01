@@ -15,119 +15,55 @@ app.use(async (c, next) => {
   await next();
 });
 
-// 1. ABSOLUTE CORS INTERCEPTOR
+// 1. Hyper-Permissive CORS Middleware
 app.use("*", async (c, next) => {
-  // Handle Preflight (OPTIONS) immediately
+  const origin = c.req.header("Origin") || "*";
+  
+  // Set headers BEFORE the request is processed
+  c.header("Access-Control-Allow-Origin", origin);
+  c.header("Access-Control-Allow-Credentials", "true");
+  c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  c.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent, x-requested-with");
+
   if (c.req.method === "OPTIONS") {
-    const origin = c.req.header("origin") || "*";
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": origin,
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent",
-        "Access-Control-Allow-Credentials": "true",
-      },
-    });
+    return c.text("", 204);
   }
 
   await next();
 
-  // Force headers on the way out
-  const origin = c.req.header("origin") || "*";
-  c.res.headers.set("Access-Control-Allow-Origin", origin);
-  c.res.headers.set("Access-Control-Allow-Credentials", "true");
-  c.res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  c.res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent");
+  // Re-verify headers AFTER the request is processed (in case they were overwritten)
+  c.header("Access-Control-Allow-Origin", origin);
+  c.header("Access-Control-Allow-Credentials", "true");
 });
 
 app.use(logger());
 
-// 2. Auth Handler with Manual CORS Injection & Logging
-app.all("/api/auth/*", async (c) => {
-  console.log(`[DEBUG] Auth Route Hit: ${c.req.path}`);
-  const res = await auth.handler(c.req.raw);
-  console.log(`[DEBUG] Auth Handler Status: ${res.status}`);
-  
-  const newRes = new Response(res.body, res);
-  const origin = c.req.header("origin");
-  const allowedOrigin = (origin?.endsWith(".vercel.app") || origin?.includes("localhost")) ? origin : env.CORS_ORIGIN;
-  
-  newRes.headers.set("Access-Control-Allow-Origin", allowedOrigin);
-  newRes.headers.set("Access-Control-Allow-Credentials", "true");
-  newRes.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  newRes.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent");
-  return newRes;
+// Diagnostic route
+app.get("/api/cors-test", (c) => {
+  return c.json({ message: "CORS is working", origin: c.req.header("Origin") });
 });
 
-app.options("*", (c) => {
-  console.log(`[DEBUG] Explicit OPTIONS Preflight Hit: ${c.req.path}`);
-  return c.text("", 204);
+app.all("/api/auth/*", (c) => {
+  return auth.handler(c.req.raw);
 });
 
 app.notFound((c) => {
-  console.log(`[DEBUG] 404 Not Found: ${c.req.path}`);
   return c.json({ error: "Not Found", path: c.req.path }, 404);
 });
 
 app.onError((err, c) => {
-  console.error(`[DEBUG] Server Error:`, err);
-  return c.json({ error: "Internal Server Error", message: err.message }, 500);
+  console.error(err);
+  return c.json({ error: "Internal Server Error" }, 500);
 });
 
 app.get("/", (c) => c.text("OK"));
-app.get("/health", (c) => c.json({ status: "ok", ts: new Date().toISOString() }));
+app.get("/health", (c) => c.json({ status: "ok" }));
 
-// API key only ever read on the server. The browser hits /api/v1/* and never sees it.
 app.route("/api/v1/runs", createRunsRouter(() => process.env.ANTHROPIC_API_KEY ?? null));
 app.route("/api/v1/compare", compareRouter);
 app.route("/api/v1/transcripts", transcriptsRouter);
 
 export default {
   port: Number(process.env.PORT) || 8787,
-  fetch: async (request: Request) => {
-    const origin = request.headers.get("origin");
-    const referer = request.headers.get("referer");
-    
-    // Determine the best origin to allow
-    let allowedOrigin = "https://healosbench-eval-harness.vercel.app";
-    if (origin && (origin.endsWith(".vercel.app") || origin.includes("localhost"))) {
-      allowedOrigin = origin;
-    } else if (referer && referer.includes("vercel.app")) {
-      const url = new URL(referer);
-      allowedOrigin = `${url.protocol}//${url.host}`;
-    }
-
-    console.log(`[CORS DEBUG] Method: ${request.method}, URL: ${request.url}, Origin: ${origin}, Allowed: ${allowedOrigin}`);
-
-    // 1. Handle Preflight OPTIONS immediately
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": allowedOrigin,
-          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent, x-requested-with",
-          "Access-Control-Allow-Credentials": "true",
-          "Access-Control-Max-Age": "86400",
-        },
-      });
-    }
-
-    // 2. Process the actual request
-    const response = await app.fetch(request);
-
-    // 3. Clone and inject headers
-    const newHeaders = new Headers(response.headers);
-    newHeaders.set("Access-Control-Allow-Origin", allowedOrigin);
-    newHeaders.set("Access-Control-Allow-Credentials", "true");
-    newHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    newHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent, x-requested-with");
-
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: newHeaders,
-    });
-  },
+  fetch: app.fetch,
 };
