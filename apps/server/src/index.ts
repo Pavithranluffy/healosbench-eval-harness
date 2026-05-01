@@ -21,7 +21,12 @@ app.use(
   cors({
     origin: (origin) => {
       console.log(`[DEBUG] CORS Check for Origin: ${origin}`);
-      return origin || "*";
+      if (!origin) return env.CORS_ORIGIN;
+      // Allow any Vercel subdomain or localhost
+      if (origin.endsWith(".vercel.app") || origin.includes("localhost")) {
+        return origin;
+      }
+      return env.CORS_ORIGIN;
     },
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "x-better-auth-api-key", "better-auth-agent"],
@@ -39,7 +44,10 @@ app.all("/api/auth/*", async (c) => {
   console.log(`[DEBUG] Auth Handler Status: ${res.status}`);
   
   const newRes = new Response(res.body, res);
-  newRes.headers.set("Access-Control-Allow-Origin", c.req.header("origin") || "*");
+  const origin = c.req.header("origin");
+  const allowedOrigin = (origin?.endsWith(".vercel.app") || origin?.includes("localhost")) ? origin : env.CORS_ORIGIN;
+  
+  newRes.headers.set("Access-Control-Allow-Origin", allowedOrigin);
   newRes.headers.set("Access-Control-Allow-Credentials", "true");
   newRes.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   newRes.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-better-auth-api-key, better-auth-agent");
